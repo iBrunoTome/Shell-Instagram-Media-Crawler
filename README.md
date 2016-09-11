@@ -1,9 +1,9 @@
 # Shell-Instagram-Media-Wrapper
 
 ## Objetivo
-Realizar um curl de um perfil no instagram e salvar suas últimas 24 fotos em um diretório de acordo com o nome de usuário na rede social
+Realizar um curl de um perfil no Instagram e salvar suas últimas 24 fotos em um diretório de acordo com o nome de usuário na rede social
 
-## Utilizar
+## Utilizando
 	- curl
 	- wget
 	- awk
