@@ -1,6 +1,19 @@
 #!/bin/bash
 
-# Função para parsear o JSON de acordo com o atributo requisitado
+# Function to download images by urls in txt file
+function downloadImages {
+	while read url ; do
+		echo Salvando $url
+		wget -q $url
+		echo ' '
+	done < ./urls.txt
+
+	# Remove auxiliar txt
+	rm -rf ./urlsAux.txt
+	rm -rf ./urls.txt
+}
+
+# Parse JSON string into a txt containing image links
 function parseJSON {
     temp=`cat ../../$username.txt |
     	sed 's/\\\\\//\//g' |
@@ -32,26 +45,24 @@ function parseJSON {
 			  for (i=1; i <= length($0); i++) {
 			    printf("%s\n", chars[i])
 			  }
-			}' > $imageType.txt
+			}' > urlsAux.txt
 
-		while read url ; do
-		    wget -nc $url
-		done < ./$imageType.txt
-
-		rm -rf ./$imageType.txt
+		# Remove blank lines
+		sed '/^$/d' urlsAux.txt > urls.txt
 }
 
-# Checa se não existe parâmetros, se não houver, pede a entrada via teclado
+# Check if parameters doesn't exists, if doesn't, get user from keyboard
 if [ $# -eq 0 ]; then
 	echo -n 'Digite seu @usuario no Instagram: '
 	read username
 	username=$(echo $username | sed 's/@//g')
-else # Preenche o usuário como 1º parâmetro 
+else # Fill the user like first parameter 
 	username=$(echo $1 | sed 's/@//g')
 fi
 
-# Se o usuário existir realiza o wget, se não existir, remove arquivos e termina a execução
-if curl -sSf https://www.instagram.com/$username/media/ > $username'.txt'; then
+# If user exists do the wget, if not, remove the files and finish the execution
+if curl -sSf https://www.instagram.com/$username/media/ > $username.txt; then
+
 	rm -rf ./$username
     mkdir $username
     cd $username
@@ -59,21 +70,63 @@ if curl -sSf https://www.instagram.com/$username/media/ > $username'.txt'; then
     mkdir low_resolution
     mkdir standard_resolution
 
+    ################################################
+    # 
+    # Thumbnail
+    #
+    ################################################
+
+    # Enter inside thumbnail directory
     cd thumbnail
+
+    # Set the type of image to download
     imageType=thumbnail
+
+    # Call the parseJSON function
 	parseJSON
+
+	# Call the function to download images
+	downloadImages
 
 	echo " "
 
-	cd ../low_resolution
-	imageType=low_resolution
+	################################################
+    # 
+    # Low resolution
+    #
+    ################################################
+
+    # Enter inside low_resolution directory
+    cd ../low_resolution
+
+    # Set the type of image to download
+    imageType=low_resolution
+
+    # Call the parseJSON function
 	parseJSON
+
+	# Call the function to download images
+	downloadImages
 
 	echo " "
 
-	cd ../standard_resolution
-	imageType=standard_resolution
+	################################################
+    # 
+    # Standard resolution
+    #
+    ################################################
+
+    # Enter inside standard_resolution directory
+    cd ../standard_resolution
+
+    # Set the type of image to download
+    imageType=standard_resolution
+
+    # Call the parseJSON function
 	parseJSON
+
+	# Call the function to download images
+	downloadImages
 
 	cd ../../
 
