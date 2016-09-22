@@ -2,20 +2,124 @@
 
 # Function to download images by urls in txt file
 function downloadImages {
-	while read url ; do
-		echo Salvando $url
-		wget -q $url
-		echo ' '
-	done < ./urls.txt
+    while read url ; do
+        echo Salvando $url
+        wget -q $url
+        echo ' '
+    done < ./urls.txt
 
-	# Remove auxiliar txt
-	rm -rf ./urlsAux.txt
-	rm -rf ./urls.txt
+    # Remove auxiliar txt
+    rm -rf ./urlsAux.txt
+    rm -rf ./urls.txt
+}
+
+# Function to call methots to save pictures
+function getPictures {
+    ################################################
+    # 
+    # Thumbnail
+    #
+    ################################################
+
+    echo Salvando imagens thumbnail
+    echo " "
+
+    # Enter inside thumbnail directory
+    cd thumbnail
+
+    # Set the type of image to download
+    imageType=thumbnail
+
+    # Call the parseJSON function
+    parseJSON
+
+    # Call the function to download images
+    downloadImages
+
+    ################################################
+    # 
+    # Low resolution
+    #
+    ################################################
+
+    echo Salvando imagens low_resolution
+    echo " "
+
+    # Enter inside low_resolution directory
+    cd ../low_resolution
+
+    # Set the type of image to download
+    imageType=low_resolution
+
+    # Call the parseJSON function
+    parseJSON
+
+    # Call the function to download images
+    downloadImages
+
+    ################################################
+    # 
+    # Standard resolution
+    #
+    ################################################
+
+    echo Salvando imagens standard_resolution
+
+    # Enter inside standard_resolution directory
+    cd ../standard_resolution
+
+    # Set the type of image to download
+    imageType=standard_resolution
+
+    # Call the parseJSON function
+    parseJSON
+
+    # Call the function to download images
+    downloadImages
+
+    cd ../
+}
+
+function checkJSONExists {
+    temp=`cat json |
+        sed 's/\\\\\//\//g' |
+        sed 's/[{}]//g' |
+        awk -v k="text" '
+            {
+                    n=split($0,a,",");
+                    for (i=1; i<=n; i++) 
+                        print a[i]
+            }' | 
+        sed 's/\"\:\"/\|/g' |
+        sed 's/[\,]/ /g' |
+        sed 's/\"//g' |
+        grep -w items`
+
+    echo ${temp}
+}
+
+function getNextJSON {
+    temp=`cat json |
+        sed 's/\\\\\//\//g' |
+        sed 's/[{}]//g' |
+        awk -v k="text" '
+            {
+                    n=split($0,a,",");
+                    for (i=1; i<=n; i++) 
+                        print a[i]
+            }' | 
+        sed 's/\"\:\"/\|/g' |
+        sed 's/[\,]/ /g' |
+        sed 's/\"//g' |
+        grep -w id |
+        grep _`
+
+    echo ${temp} | awk -F " " '{print $NF}'
 }
 
 # Parse JSON string into a txt containing image links
 function parseJSON {
-    temp=`cat ../../$username.txt |
+    temp=`cat ../json |
     	sed 's/\\\\\//\//g' |
     	sed 's/[{}]//g' |
     	awk -v k="text" '
@@ -29,7 +133,7 @@ function parseJSON {
     	sed 's/\"//g' |
     	grep -w $imageType`
 
-    	echo ${temp##*|} |
+    	echo ${temp} |
     	sed 's/thumbnail: //g' |
     	sed 's/low_resolution: //g' |
     	sed 's/standard_resolution: //g' |
@@ -61,7 +165,7 @@ else # Fill the user like first parameter
 fi
 
 # If user exists do the wget, if not, remove the files and finish the execution
-if curl -sSf https://www.instagram.com/$username/media/ > $username.txt; then
+if curl -sSf https://www.instagram.com/$username/media/ > json; then
 
 	rm -rf ./$username
     mkdir $username
@@ -70,68 +174,29 @@ if curl -sSf https://www.instagram.com/$username/media/ > $username.txt; then
     mkdir low_resolution
     mkdir standard_resolution
 
-    ################################################
-    # 
-    # Thumbnail
-    #
-    ################################################
+    cd ../
 
-    # Enter inside thumbnail directory
-    cd thumbnail
+    mv json $username
 
-    # Set the type of image to download
-    imageType=thumbnail
+    cd $username
 
-    # Call the parseJSON function
-	parseJSON
+    getPictures
 
-	# Call the function to download images
-	downloadImages
+    size=$(checkJSONExists)
+    size=${#size}
 
-	echo " "
+    while [ $size -gt 10 ]
+    do
+        max_id=$(getNextJSON)
+        nextUrl='https://www.instagram.com/'$username'/media/?max_id='$max_id
+        curl -sSf $nextUrl > json
+        getPictures
+        size=$(checkJSONExists)
+        size=${#size}
+    done
 
-	################################################
-    # 
-    # Low resolution
-    #
-    ################################################
-
-    # Enter inside low_resolution directory
-    cd ../low_resolution
-
-    # Set the type of image to download
-    imageType=low_resolution
-
-    # Call the parseJSON function
-	parseJSON
-
-	# Call the function to download images
-	downloadImages
-
-	echo " "
-
-	################################################
-    # 
-    # Standard resolution
-    #
-    ################################################
-
-    # Enter inside standard_resolution directory
-    cd ../standard_resolution
-
-    # Set the type of image to download
-    imageType=standard_resolution
-
-    # Call the parseJSON function
-	parseJSON
-
-	# Call the function to download images
-	downloadImages
-
-	cd ../../
-
-	rm -rf ./$username.txt
+	rm -rf ./json
 else
-	rm -rf ./$username.txt
+	rm -rf ./json
 	echo 'Usuário inválido'
 fi
