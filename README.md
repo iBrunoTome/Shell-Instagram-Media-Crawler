@@ -1,7 +1,7 @@
 # Shell-Instagram-Media-Wrapper
 
 ## Objetivo
-Realizar um curl de um perfil no Instagram e salvar suas últimas 24 fotos em um diretório de acordo com o nome de usuário na rede social
+Realizar um curl de um perfil público no Instagram e salvar todas mídias publicadas deste perfil.
 
 ## Utilizando
 	- curl
@@ -10,3 +10,4 @@ Realizar um curl de um perfil no Instagram e salvar suas últimas 24 fotos em um
 	- sed
 	- mkdir
 	- mv
+	- API pública do Instagram
