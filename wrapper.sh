@@ -2,10 +2,15 @@
 
 # Function to download images by urls in txt file
 function downloadImages {
-    while read url ; do
-        echo Salvando $url
-        wget -q $url
-        echo ' '
+    while read url; do
+        if [ $maxPics -gt $countDownloaded ]; then
+            echo Salvando $url
+            wget -q $url
+            echo ' '
+            ((countDownloaded++))
+        else
+            break
+        fi
     done < ./urls.txt
 
     # Remove auxiliar txt
@@ -36,6 +41,9 @@ function getPictures {
     # Call the function to download images
     downloadImages
 
+    # Reset countDownloaded variable
+    countDownloaded=0
+
     ################################################
     # 
     # Low resolution
@@ -56,6 +64,9 @@ function getPictures {
 
     # Call the function to download images
     downloadImages
+
+    # Reset countDownloaded variable
+    countDownloaded=0
 
     ################################################
     # 
@@ -160,8 +171,20 @@ if [ $# -eq 0 ]; then
 	echo -n 'Digite seu @usuario no Instagram: '
 	read username
 	username=$(echo $username | sed 's/@//g')
-else # Fill the user like first parameter 
+    echo -n 'Quantidade de fotos para baixar: '
+    countDownloaded=0
+    read maxPics
+elif [ $# -eq 1 ]; then
 	username=$(echo $1 | sed 's/@//g')
+    maxPics=1000000
+    countDownloaded=0
+elif [ $# -eq 2 ]; then 
+    username=$(echo $1 | sed 's/@//g')
+    maxPics=$2
+    countDownloaded=0
+else
+    echo 'Quantidade de parâmetros inválida'
+    exit
 fi
 
 # If user exists do the wget, if not, remove the files and finish the execution
@@ -187,12 +210,16 @@ if curl -sSf https://www.instagram.com/$username/media/ > json; then
 
     while [ $size -gt 10 ]
     do
-        max_id=$(getNextJSON)
-        nextUrl='https://www.instagram.com/'$username'/media/?max_id='$max_id
-        curl -sSf $nextUrl > json
-        getPictures
-        size=$(checkJSONExists)
-        size=${#size}
+        if [ $maxPics -gt $countDownloaded ]; then
+            max_id=$(getNextJSON)
+            nextUrl='https://www.instagram.com/'$username'/media/?max_id='$max_id
+            curl -sSf $nextUrl > json
+            getPictures
+            size=$(checkJSONExists)
+            size=${#size}
+        else
+            break
+        fi
     done
 
 	rm -rf ./json
