@@ -1,6 +1,11 @@
 #!/bin/bash
 
+################################################################################################
+# @author Bruno Tomé
+# @email ibrunotome@gmail.com
+#
 # Repository on GitHub: https://github.com/iBrunoTome/Shell-Instagram-Media-Wrapper
+################################################################################################
 
 # Function to download images by urls in txt file
 function downloadImages {
