@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Repository on GitHub: https://github.com/iBrunoTome/Shell-Instagram-Media-Wrapper
+
 # Function to download images by urls in txt file
 function downloadImages {
     while read url; do
