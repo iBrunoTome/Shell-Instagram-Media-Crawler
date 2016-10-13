@@ -9,17 +9,19 @@
 
 # Function to download images by urls in txt file
 function downloadImages {
-    while read url; do
-        if [ $maxPics -gt $countDownloaded ]; then
-            echo Salvando $url
-            wget -q $url
-            echo ' '
-            ((countDownloaded++))
-        else
-            break
-        fi
-    done < ./urls.txt
-
+    echo $countDownloadedAux;
+    if [ $maxPics -gt $countDownloadedAux ]; then
+        while read url; do
+            if [ $maxPics -gt $countDownloaded ]; then
+                echo Salvando $url
+                wget -q $url
+                echo ' '
+                ((countDownloaded++))
+            else
+                break
+            fi
+        done < ./urls.txt
+    fi
     # Remove auxiliar txt
     rm -rf ./urlsAux.txt
     rm -rf ./urls.txt
@@ -95,9 +97,17 @@ function getPictures {
     # Call the function to download images
     downloadImages
 
+    # Set a value for countDownloadedAux
+    countDownloadedAux=$(($countDownloadedAux + $countDownloaded))
+    echo $countDownloadedAux;
+
+    # Reset countDownloaded variable
+    countDownloaded=0
+
     cd ../
 }
 
+# Function to check if exists more pictures
 function checkJSONExists {
     temp=`cat json |
         sed 's/\\\\\//\//g' |
@@ -116,6 +126,7 @@ function checkJSONExists {
     echo ${temp}
 }
 
+# Function to get next JSON
 function getNextJSON {
     temp=`cat json |
         sed 's/\\\\\//\//g' |
@@ -180,15 +191,18 @@ if [ $# -eq 0 ]; then
 	username=$(echo $username | sed 's/@//g')
     echo -n 'Quantidade de fotos para baixar: '
     countDownloaded=0
+    countDownloadedAux=0
     read maxPics
 elif [ $# -eq 1 ]; then
 	username=$(echo $1 | sed 's/@//g')
     maxPics=1000000
     countDownloaded=0
+    countDownloadedAux=0
 elif [ $# -eq 2 ]; then 
     username=$(echo $1 | sed 's/@//g')
     maxPics=$2
     countDownloaded=0
+    countDownloadedAux=0
 else
     echo 'Quantidade de parâmetros inválida'
     exit
@@ -217,16 +231,21 @@ if curl -sSf https://www.instagram.com/$username/media/ > json; then
 
     while [ $size -gt 10 ]
     do
-        if [ $maxPics -gt $countDownloaded ]; then
-            max_id=$(getNextJSON)
-            nextUrl='https://www.instagram.com/'$username'/media/?max_id='$max_id
-            curl -sSf $nextUrl > json
-            getPictures
-            size=$(checkJSONExists)
-            size=${#size}
+        if [ $maxPics -gt $countDownloadedAux ]; then
+            if [ $maxPics -gt $countDownloaded ]; then
+                max_id=$(getNextJSON)
+                nextUrl='https://www.instagram.com/'$username'/media/?max_id='$max_id
+                curl -sSf $nextUrl > json
+                getPictures
+                size=$(checkJSONExists)
+                size=${#size}
+            else
+                break
+            fi
         else
             break
         fi
+
     done
 
 	rm -rf ./json
