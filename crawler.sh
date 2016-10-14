@@ -9,8 +9,7 @@
 
 # Function to download images by urls in txt file
 function downloadImages {
-    echo $countDownloadedAux;
-    if [ $maxPics -gt $countDownloadedAux ]; then
+    if [ $maxPics -gt $(($countDownloadedAux+1)) ]; then
         while read url; do
             if [ $maxPics -gt $countDownloaded ]; then
                 echo Salvando $url
